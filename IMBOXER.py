@@ -1,13 +1,17 @@
 import asyncio
 import datetime
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import LabeledPrice, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
-import os
-TOKEN = os.getenv("AAF0gf1fWZ6o6MZVAl9ve7jhQUOjo66Ftwc")
+# ==============================
+# TOKEN DESDE RAILWAY
+# ==============================
+
+TOKEN = os.getenv("TOKEN")
 
 bot = Bot(
     token=TOKEN,
@@ -17,13 +21,13 @@ bot = Bot(
 dp = Dispatcher()
 
 # ==============================
-# ESTADO SIMPLE
+# ESTADO
 # ==============================
 
 user_states = {}
 
 # ==============================
-# MENÚ PRINCIPAL
+# MENÚ
 # ==============================
 
 def menu():
@@ -49,7 +53,7 @@ async def start(message: types.Message):
 # ENVIAR FACTURA
 # ==============================
 
-async def enviar_factura(chat_id, amount, servicio="Servicio general"):
+async def enviar_factura(chat_id, amount, servicio="Servicio"):
     prices = [LabeledPrice(label=servicio, amount=amount)]
 
     await bot.send_invoice(
@@ -73,7 +77,7 @@ async def botones(call: types.CallbackQuery):
     if call.data.startswith("pay_"):
         amount = int(call.data.split("_")[1])
         user_states[call.from_user.id] = {"amount": amount}
-        await call.message.answer("🧾 Escribe el servicio (ej: Netflix, Spotify, Diseño web):")
+        await call.message.answer("🧾 Escribe el servicio (ej: Netflix, Spotify):")
 
     elif call.data == "custom":
         user_states[call.from_user.id] = {"custom": True}
@@ -82,7 +86,7 @@ async def botones(call: types.CallbackQuery):
     await call.answer()
 
 # ==============================
-# MENSAJES (FLUJO)
+# FLUJO
 # ==============================
 
 @dp.message()
@@ -94,7 +98,6 @@ async def flujo(message: types.Message):
 
     data = user_states[user_id]
 
-    # Si está poniendo monto personalizado
     if "custom" in data:
         try:
             amount = int(message.text)
@@ -110,7 +113,6 @@ async def flujo(message: types.Message):
             await message.answer("❌ Escribe un número válido")
         return
 
-    # Si ya tiene monto, ahora pide servicio
     if "amount" in data:
         servicio = message.text
         amount = data["amount"]
@@ -128,7 +130,7 @@ async def pre_checkout(q: types.PreCheckoutQuery):
     await bot.answer_pre_checkout_query(q.id, ok=True)
 
 # ==============================
-# CONFIRMACIÓN DE PAGO
+# CONFIRMACIÓN
 # ==============================
 
 @dp.message(lambda m: m.successful_payment)
@@ -145,8 +147,7 @@ async def pago_exitoso(message: types.Message):
         f"✅ <b>Pago recibido</b>\n\n"
         f"🧾 Factura: {factura_id}\n"
         f"💰 Monto: {amount} Stars\n"
-        f"📌 Estado: Confirmado\n\n"
-        f"Gracias por su pago."
+        f"📌 Estado: Confirmado"
     )
 
     print(f"✔ {factura_id} - {amount} Stars")
@@ -156,7 +157,7 @@ async def pago_exitoso(message: types.Message):
 # ==============================
 
 async def main():
-    print("Sistema de facturación corriendo...")
+    print("Bot corriendo en Railway...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
